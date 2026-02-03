@@ -45,7 +45,7 @@ ax.hlines(y=0.5 , xmin=0 , xmax=11 ,
 
 # Configurar a serie
 ax.grid(visible=True, linestyle="--")
-ax.set_title("Relação Status Aprovação vs Cervejas")
+ax.set_title("Relação Status Aprovação vs Cervejas" , loc='left')
 ax.set_ylim(bottom=-0.1 , top=1.1)
 ax.set_xlim(left=0 , right=11)
 ax.set_xlabel("Qtde de cervejas")
@@ -68,6 +68,46 @@ de minimos quadradoo, a Regressão Logistica a função de erro é chamada de
 LOG LOSS e o modelo tambem busca sua minimização
 '''
 
+from sklearn import linear_model
+
+X_observado = df[['cerveja']]
+y_observado = df['Aprovado']
+
+reg = linear_model.LogisticRegression()
+reg.fit(X=X_observado , y=y_observado)
+
+# Obtendo o intercepto (B0)
+reg.intercept_
+
+# Obtendo os coeficientes (Betas)
+reg.coef_
+
+# Para prever os valores usamos o PREDICT, no nosso exercicio, com os valores
+# da propria base de Qtde de Cervejas porém agora vamos CRIAR UM INTERVALO CONTINUO para
+# calcular os y previstos. Para isso precisamos do NumPy
+
+import numpy as np
+
+# Vamos entender as parcelas da expressão
+X_deduplicado = (
+    np.linspace(0 , 11 , 200)   # Crie uma sequencia de 200 pontos entre 0 e 11 , sem tocar em 11
+      .reshape(-1,1)            # Remodele isso para uma MATRIZ com N linhas (-1) e 1 COLUNA
+)
+# ... isso é necessário porque precisamos de uma MATRIZ, ainda que UNIDIMENSIONAL em scikit
+
+# Agora podemos prever os valores, mas a curva vai ter 200 pontos, lembra? Então agora podemos ter
+# 2 tipos de previsão
+
+# Modelo 1 : PREDICT, que vai retornar somente os BINÁRIOS para cada ponto do LINSPACE
+# Usar essa versão na visualização vai nos dar uma ESCADA e criar uma especie de linha de corte
+# horizontal
+y_previsto = reg.predict(X=X_deduplicado)
+
+# Modelo 2 : PROBAS, com a PROBABILIDADE de positivo para cada ponto do LINSPACE
+# Aqui temos para cada X uma probabilidade em y. É um array de listas [X , y], onde
+# queremoos plotar apenas TODOS OS valores de y que estão na posição [1] do array
+y_previsto = reg.predict_proba(X=X_deduplicado)[: , 1]
+
 
 # %%
 
@@ -83,10 +123,11 @@ ax.hlines(y=0.5 , xmin=0 , xmax=11 ,
           colors='black' , linestyle='--', linewidth=2)
 
 # Plotar a curva ajustada
+ax.plot(X_deduplicado , y_previsto , marker=None)
 
 # Configurar a serie
 ax.grid(visible=True, linestyle="--")
-ax.set_title("Relação Status Aprovação vs Cervejas")
+ax.set_title("Status Aprovação vs Cervejas | Regressão Logistica", loc='left')
 ax.set_ylim(bottom=-0.1 , top=1.1)
 ax.set_xlim(left=0 , right=11)
 ax.set_xlabel("Qtde de cervejas")
@@ -118,6 +159,19 @@ combinações dos resultados
 
 '''
 
+from sklearn import tree
+
+X_observado = df[['cerveja']]
+y_observado = df['Aprovado']
+
+# Configurar e treinar a arvore
+arvore = tree.DecisionTreeClassifier(max_depth=3)
+arvore.fit(X=X_observado, y=y_observado)
+
+# Prever novos valores
+X_deduplicado = np.linspace(0 , 11 , 200).reshape(-1 , 1)
+y_previsto = arvore.predict(X=X_deduplicado)
+
 
 # %%
 
@@ -128,18 +182,18 @@ fig , ax = plt.subplots()
 ## Agora vamos configurar o plot efetivamente
 
 # Eixos e marcadores (Plot dos DADOS OBSERVADOS)
-ax.plot(df['cerveja'] , df['nota'] , 'o') # ou marker='o' , linestyle=None
+ax.plot(df['cerveja'] , df['Aprovado'] , 'o') # ou marker='o' , linestyle=None
 # Eixos e marcadores (Plot da PREVISÃO)
 ax.plot(X_deduplicado , y_previsto , marker=None) # porque agora queremos uma linha
 # Linhas de grade
 ax.grid(visible=True,linestyle='--')
 # Configuração do eixo
-titulo = "Relação Nota vs Cervejas - Arvore de Decisao"
+titulo = "Status Aprovação vs Cervejas | Arvore de Decisão"
 ax.set_title(titulo,loc='left')
 ax.set_xlabel("Qtde de cervejas")
 ax.set_ylabel("Nota final")
+ax.set_ylim(bottom=-0.1 , top=1.1)
 ax.set_xlim(left=0 , right=11)
-ax.set_ylim(bottom=0 , top=11)
 
 # Ajuster formato compacto
 plt.tight_layout()
@@ -215,4 +269,65 @@ as DISTRIBUIÇÕES de cada variável aleatoria.
     isso, a cada novo dado adicionado verifica-se a PROBABILIDADE de aquele ponto estar na distribuição
     y=1 ou y=0
 
+    > Assume-se tambem que TODAS as covariáveis seguirão a mesma distribuição (BERNOULI ou NORMAL)
+
+    > Outra premissa do modelo é que não há dependência ENTRE AS covariáveis
+
+    > Não é necessário normalizar os dados para (mi=1 e sigma=0), mas é necessário assumir normalidade
+    dos dados, um vez que o algoritmo calcula mi e sigma para cada variavel
+
+    > Caso a distribuição não siga uma normal, podemos
+        
+        > BINARIZAR a distribuição por exemplo, usando uma ARVORE DE DECISÃO usando os melhores 
+        cortes possiveis
+
+        > NORMALIZAR a distribuição
+
 '''
+
+from sklearn import naive_bayes
+
+X_observado = df[['cerveja']]
+y_observado = df['Aprovado']
+
+# Inicializar o modelo Gaussiano, ou seja, assumimos a distribuição de Qtde de Cervejas
+# sendo uma NORMAL
+nb = naive_bayes.GaussianNB()
+nb.fit(X=X_observado , y=y_observado)
+
+# Prever valores
+X_deduplicado = np.linspace(0 , 11 , 200).reshape(-1 , 1)
+
+# Assim como o regressor logistico o PREDICT retorna o BINÁRIO...
+y_previsto = nb.predict(X=X_deduplicado)
+
+# ... e o PROBA as probabilidade em lista para cada X , y
+y_previsto = nb.predict_proba(X=X_deduplicado)[: , 1]
+
+# %%
+
+# Agora vamos visualizar os resultados
+
+fig , ax = plt.subplots()
+
+## Agora vamos configurar o plot efetivamente
+
+# Eixos e marcadores (Plot dos DADOS OBSERVADOS)
+ax.plot(df['cerveja'] , df['Aprovado'] , 'o') # ou marker='o' , linestyle=None
+# Eixos e marcadores (Plot da PREVISÃO)
+ax.plot(X_deduplicado , y_previsto , marker=None) # porque agora queremos uma linha
+# Linhas de grade
+ax.grid(visible=True,linestyle='--')
+# Configuração do eixo
+titulo = "Status Aprovação vs Cervejas | Naive Bayes"
+ax.set_title(titulo,loc='left')
+ax.set_xlabel("Qtde de cervejas")
+ax.set_ylabel("Nota final")
+ax.set_ylim(bottom=-0.1 , top=1.1)
+ax.set_xlim(left=0 , right=11)
+
+# Ajuster formato compacto
+plt.tight_layout()
+# Exibir o resultado
+plt.show()
+# %%

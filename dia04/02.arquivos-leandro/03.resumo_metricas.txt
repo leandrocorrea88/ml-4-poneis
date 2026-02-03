@@ -1,0 +1,112 @@
+Uma boa sequencia para rodar e avaliar um modelo poderia ser
+
+    1. Importação e exploração do dados : Definir se as premissas de cada modelo (Regressão Log , 
+    Árvore de Decisão, Naive Bayes) estão satisfeitas ou é necessária alguma transformação dos 
+    dados (binarização usando árvores, normalização de dados não normais, ...)
+
+    2. Aplicação do modelo : Selecionando a variável alvo (target/vetor) e as covariáveis (features/
+    matriz) , chamando o modelo mais adequado e realizando o fit
+
+    3. Plotar a curva prevista sobre os dados para avaliar visualmente a modelagem. Atentar que aqui
+    pode ser necessário criar um intervalo de dados continuo pra plotar os Predicts/Probas
+
+    3. Avaliação da matriz de confusão e métricas: Acurácia , Precisão , Recall , Especificidade
+
+    4. Entendimento das regras de negócio para definir o corte/cutoff do modelo e seus impactos em
+    Precisão , Recall e Especificidade. Para isso podemos plotar uma Curva ROC e obter o valor de
+    ROC_AUC ou área abaixo da curva ROC (quando mais próximo de 1, mais ajustado é o modelo)
+
+Qual métrica escolher? Depende do contexto de negócio que estamos lidando.
+
+    - Acurácia : Quanto eu acerto no GERAL? Tem pouco peso decisório porque o peso dos erros é
+    tratado de maneira igual. Então em situação onde ERRAR É BARATO pode ser útil
+
+        > Qualidade operacional simples : Classificar ticket em Urgente/Não Urgente
+        > Bases balanceadas : 50% aprovados | 50% aprovados (Acurácia não mascara erro estrutural)
+        > Modelo explotatório ou POC
+
+    - Precisão : Quando eu digo SIM, estou certo? Mede a confiabilidade de cada decisão positiva e
+    penaliza os FALSOS POSITIVOS, mas IGNORA FALSOS NEGATIVOS. É útil em contextos quando AGIR
+    ERRADO CUSTA CARO (Taxa de Acertos de Positivos)
+
+        > Aprovação de Crédito (tem impacto financeiro direto)
+        > Campanhas de alto custo : brindes, oferta premium, convites exclusivos (o falso positivo 
+        significa gastar com quem eu não deveria)
+        > Alertas manuais escassos : time pequeno de analistas, cada alerta vira trabalho humano
+        (Falso positivo é desperdício de tempo)
+    
+    - Recall : Estou deixando algo importante passar? Mede a COBERTURA/CAPTURA dos REAIS POSITIVOS,
+    penaliza os FALSOS NEGATIVOS e IGNORA FALSOS POSITIVOS. É útil em contextos onde perder um caso
+    se torna INACEITÁVEL
+
+        > Fraude , Risco ou Compliance (Impacto reputacional, legal ou financeiro)
+        > Saude , Diagnostico (Risco humano direto)
+        > Churn, Risco de Cancelamento (Perda de receita futura)
+    
+    - Especificidade : Quando eu digo NÃO, estou certo? Mede a capacidade do modelo de POUPAR 
+    recursos e não executar ações desnecessárias. Também penaliza os FALSOS POSITIVOS para entender
+    se estamos evitano agir a toa
+
+        > Testes, triagens e rastreios em larga escala (aqui falsos positivos são pacientes tratados
+        como doentes, gerando mais exames, ansiedade, custo operacional e retrabalho. Garante que
+        quem não é positivo possa ficar em paz)
+        > Controle de Qualidade, Defeito Industrial (detectar produtos defeituosos e evitar o descarte
+        de produtos bons, reduzindo desperdício, retrabalho e gargalos operacionais)
+        > Comunicações, alertas e interrupções ao usuário (encaminhar notificações, pop-ups, pushes
+        para clientes falsos positivos reduz a confiança no sistema e aumenta CREDIBILIDADE)
+
+Em resumo:
+
+    Acurácia        No geral, estou bem?            Reduz erro aleatorio        Protege EGO
+    Precisão        Posso confiar no SIM?           Reduz falso positivo        Protege CUSTO
+    Recall          Estou deixando algo passar?     Reduz falso negativo        Protege RISCO
+    Especificidade  Posso confiar no NÃO?           Evita ação desnecessária    Protege MARGEM
+
+A partir do momento em que o modelo é definido, as mudanças em CUTOFF vão definir as DECISÕES, pois
+aumentar PRECISÃO acaba reduzindo RECALL.
+
+Ex.1- Churn : Ao aumentar o RECALL aumentamos a possibilidade de capturar os clientes que, de fato,
+viraram Churn, mas isso implica em reduzir a precisão do modelo porque passamos a considerar MAIS
+clientes como churn, ainda que eles não sejam
+
+    Cutoff          O que acontece
+    0.3             Abordamos quase todos os clientes em risco
+    0.5             Abordamos os prováveis
+    0.8             Abordamos somente os "quase certos"
+
+Ex.2- Fraude : Ao aumentar o RECALL reduzimos o risco de deixar passar um cliente fraudador, mas
+aumentamos a chance de chamar um bom cliente de Fraudador
+
+    Cutoff          O que acontece
+    0.3             Classifico mais clientes como fraudadores, mas CAPTURO mais do real
+    0.5             Classifico os prováveis
+    0.8             É preciso muita coisa para classificar um fraudador, mas CAPTURO menos do REAL
+
+Em resumo:
+
+    Cutoff          Precisão            Recall
+    BAIXO           ALTA                BAIXO
+    ALTO            BAIXA               ALTA
+
+Nesses cenários a acurácia se torna mais frágil para decisões criticas
+
+Ex.1- Real : Churn 5% , Nao Churn 95% >> O modelo prevê "Não Churn" pra todo mundo >> Acurácia de
+95%, porém os 5% que eu perdi vão fazer muita diferença. Na prática não salvei nenhum cliente. É
+uma acurácia alta, mas valor de negócio nulo!!
+
+Ex.2- Inadimplencia/Crédito : Acurácia alta pode significar que eu simplesmente só aprendi a dizer
+um NÃO!
+
+Em um contexto onde temos DECISÃO ESTRATÉGIA, e não TUNING TÉCNICO:
+
+    > O Cutoff é a ALAVANCA
+    > As métricas são o VOLANTE
+    > Acurácia é o RETROVISOR
+
+Outros exemplos:
+
+    > Prefiro (a) incomodar 10 clientes a mais (b) do que perder 1 cliente valioso sem tentar
+    >> (a) Baixo cutoff que (b) aumenta recall e reduz precisão
+
+    > Prefiro (a) perder algumas oportunidades (b) do que assumir risco financeiro
+    >> (b) Alto cutoff que (b) aumenta precisão e reduz recall
