@@ -1,5 +1,5 @@
 # %%
-import matplotlib.pyplot as plt
+import pandas as pd
 
 from sklearn import ensemble
 from sklearn import metrics
@@ -8,8 +8,7 @@ from sklearn import pipeline
 
 from feature_engine import imputation
 
-import pandas as pd
-
+import matplotlib.pyplot as plt
 import scikitplot as skplot
 
 # %%
