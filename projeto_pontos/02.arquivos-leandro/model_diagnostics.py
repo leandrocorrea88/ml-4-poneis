@@ -227,7 +227,7 @@ skplot.metrics.plot_lift_curve(y_train , y_train_proba_full)
 
 '''
 Essa visualização mostra as curvas preditivas de ambas as classes versus um modelo Naive de 
-classificação. A tendência é que no fim (com 100% da amostra ordenada DESC), ambos os modelos 
+classificação. A tendência é que no fim (com 100% da amostra ordenada), ambos os modelos 
 cubram todas as observações, porém o LIFT mostra a vantagem do modelo ao apontar a clase à medida
 em que avançamos nas predições.
 
@@ -241,7 +241,7 @@ skplot.metrics.cumulative_gain_curve(y_train , y_train_proba_full)
 
 '''
 Essa visualização mostra o quanto de cada classe foi capturado a medida em que avançamos no vetor
-de predição ordenado DESC
+de predição ordenado
 
 No nosso caso, com 20% das maiores predições o modelo havia capturado 50% dos casos de y=1 e 25% 
 dos casos de y=0 e com 40% das maiores predições o modelo já havia capturado 80% dos casos de y=1 
